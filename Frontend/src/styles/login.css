@@ -1,5 +1,5 @@
 /* ============================================================
-   PHARVO — Login page styles
+   PHARVO — Medicine Specialist Login styles
    Palette: primary #2563EB · light blue #DBEAFE · bg #F5F9FF
    ============================================================ */
 
@@ -425,18 +425,6 @@ a {
 .field__icon {
   width: 20px;
   height: 20px;
-}
-
-.field__icon--hide {
-  display: none;
-}
-
-.field__toggle[aria-pressed="true"] .field__icon--show {
-  display: none;
-}
-
-.field__toggle[aria-pressed="true"] .field__icon--hide {
-  display: block;
 }
 
 .field__error {
