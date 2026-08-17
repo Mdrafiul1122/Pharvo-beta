@@ -3,10 +3,11 @@ from decimal import Decimal
 
 from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404
-from rest_framework import permissions, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from accounts.permissions import IsStaffOrReadOnly
 from purchases.models import Purchase
 from purchases.serializers import PurchaseSerializer
 
@@ -41,16 +42,6 @@ def _products_by_expiry_status(status, days):
     return queryset.filter(
         Q(expiry_date__isnull=True) | Q(expiry_date__gt=window_end)
     )
-
-
-class IsStaffOrReadOnly(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        if not user or not user.is_authenticated:
-            return False
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return user.is_staff
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

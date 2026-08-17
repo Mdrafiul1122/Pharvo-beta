@@ -2,11 +2,11 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.db.models import Count, F, Sum
-from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import IsPharmacyStaff
 from customers.models import Customer
 from inventory.models import Product
 from inventory.views import NEAR_EXPIRY_DAYS
@@ -46,7 +46,7 @@ def _date_range(request):
 
 
 class SalesReportView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsPharmacyStaff]
 
     def get(self, request):
         start, end = _date_range(request)
@@ -103,7 +103,7 @@ class SalesReportView(APIView):
 
 
 class PurchasesReportView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsPharmacyStaff]
 
     def get(self, request):
         start, end = _date_range(request)
@@ -161,7 +161,7 @@ class PurchasesReportView(APIView):
 
 
 class ProfitReportView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsPharmacyStaff]
 
     def get(self, request):
         start, end = _date_range(request)
@@ -192,7 +192,7 @@ class ProfitReportView(APIView):
 
 
 class StockReportView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsPharmacyStaff]
 
     def get(self, request):
         today = date.today()
@@ -228,7 +228,7 @@ class StockReportView(APIView):
 
 
 class CustomersReportView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsPharmacyStaff]
 
     def get(self, request):
         top_by_spending = (

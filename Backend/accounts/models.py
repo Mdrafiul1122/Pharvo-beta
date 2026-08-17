@@ -14,8 +14,7 @@ class User(AbstractUser):
     class Role(models.TextChoices):
         ADMIN = "admin", "Admin"
         PHARMACIST = "pharmacist", "Pharmacist"
-        ASSISTANT = "assistant", "Assistant"
-        STAFF = "staff", "Staff"
+        CUSTOMER = "customer", "Customer"
 
     role = models.CharField(
         max_length=20,

@@ -1,10 +1,11 @@
 from decimal import Decimal
 
 from django.db.models import F, Sum
-from rest_framework import permissions, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from accounts.permissions import IsStaffOrReadOnly
 from customers.models import Customer
 from customers.serializers import CustomerSerializer
 from sales.models import SaleItem
@@ -16,16 +17,6 @@ from .serializers import (
     PurchaseHistorySerializer,
     ReminderSerializer,
 )
-
-
-class IsStaffOrReadOnly(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        if not user or not user.is_authenticated:
-            return False
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return user.is_staff
 
 
 class CrmCustomerViewSet(viewsets.ReadOnlyModelViewSet):

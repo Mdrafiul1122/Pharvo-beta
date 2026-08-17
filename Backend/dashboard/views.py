@@ -2,10 +2,10 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.db.models import F, Sum
-from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import IsPharmacyStaff
 from customers.models import Customer
 from inventory.models import Product, Supplier
 from inventory.views import NEAR_EXPIRY_DAYS
@@ -26,7 +26,7 @@ def _parse_days(request):
 
 
 class DashboardView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsPharmacyStaff]
 
     def get(self, request):
         days = _parse_days(request)

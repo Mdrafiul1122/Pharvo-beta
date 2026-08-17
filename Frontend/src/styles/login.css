@@ -1,5 +1,5 @@
 /* ============================================================
-   PHARVO — Medicine Specialist Login styles
+   PHARVO — Authentication styles (login, signup)
    Palette: primary #2563EB · light blue #DBEAFE · bg #F5F9FF
    ============================================================ */
 
@@ -582,9 +582,84 @@ a {
   }
 }
 
-.login-form__note {
+.login-form__prompt {
   margin: 16px 0 0;
   text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------
+   Signup role selector
+   ------------------------------------------------------------ */
+
+.role-select {
+  display: grid;
+  gap: 10px;
+}
+
+.role-select__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.role-select__option:hover {
+  border-color: var(--border-strong);
+}
+
+.role-select__option.is-active {
+  border-color: var(--blue-600);
+  background: var(--blue-50);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.role-select__option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+}
+
+.role-select__badge {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: 9px;
+  color: var(--blue-600);
+}
+
+.role-select__badge svg {
+  width: 19px;
+  height: 19px;
+}
+
+.role-select__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.role-select__label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.role-select__hint {
   font-size: 0.8125rem;
   color: var(--text-secondary);
 }

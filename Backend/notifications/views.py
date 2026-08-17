@@ -1,6 +1,8 @@
-from rest_framework import permissions, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from accounts.permissions import IsPharmacyStaff
 
 from .models import Notification
 from .serializers import NotificationSerializer
@@ -9,7 +11,7 @@ from .services import refresh_alerts
 
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsPharmacyStaff]
 
     def get_queryset(self):
         queryset = Notification.objects.select_related("product")

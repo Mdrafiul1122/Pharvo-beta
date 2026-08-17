@@ -1,20 +1,11 @@
 from django.db import transaction
-from rest_framework import permissions, viewsets
+from rest_framework import viewsets
 
+from accounts.permissions import IsStaffOrReadOnly
 from inventory.services import add_purchase_stock, remove_purchase_stock
 
 from .models import Purchase
 from .serializers import PurchaseSerializer
-
-
-class IsStaffOrReadOnly(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        if not user or not user.is_authenticated:
-            return False
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return user.is_staff
 
 
 class PurchaseViewSet(viewsets.ModelViewSet):

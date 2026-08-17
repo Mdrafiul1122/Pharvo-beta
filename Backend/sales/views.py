@@ -1,20 +1,11 @@
 from django.db import transaction
-from rest_framework import permissions, viewsets
+from rest_framework import viewsets
 
+from accounts.permissions import IsStaffOrReadOnly
 from inventory.services import deduct_sale_stock, restore_sale_stock
 
 from .models import Sale
 from .serializers import SaleSerializer
-
-
-class IsStaffOrReadOnly(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        if not user or not user.is_authenticated:
-            return False
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return user.is_staff
 
 
 class SaleViewSet(viewsets.ModelViewSet):

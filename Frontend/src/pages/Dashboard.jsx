@@ -13,7 +13,7 @@ import {
   TruckIcon,
   UsersIcon,
 } from "../components/Icons";
-import { clearStoredTokens, getAccessToken } from "../services/auth";
+import { clearStoredTokens, getAccessToken, getStoredRole, roleHomePath } from "../services/auth";
 import { fetchDashboard } from "../services/dashboard";
 import "../styles/dashboard.css";
 
@@ -77,9 +77,9 @@ export default function Dashboard() {
         if (cancelled) {
           return;
         }
-        if (err?.status === 401) {
+        if (err?.status === 401 || err?.status === 403) {
           clearStoredTokens();
-          window.location.assign("/");
+          window.location.assign(roleHomePath(getStoredRole()));
           return;
         }
         setError(err?.message || "Unable to load dashboard data.");
