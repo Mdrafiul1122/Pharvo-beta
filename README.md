@@ -43,3 +43,7 @@ npm run build
 The Vite dev server proxies `/api` requests to the Django backend at
 `http://127.0.0.1:8000` (see `Frontend/vite.config.js`). Start the backend
 first, then the frontend.
+
+For a single-URL setup, the Django backend also serves the built frontend:
+run `npm run build` in `Frontend/` once, then open `http://127.0.0.1:8000/`
+directly.

@@ -3,7 +3,10 @@ URL configuration for the PHARVO project.
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve as serve_static
+
+from .views import FRONTEND_DIST, serve_frontend
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -17,4 +20,17 @@ urlpatterns = [
     path("api/dashboard/", include("dashboard.urls")),
     path("api/reports/", include("reports.urls")),
     path("api/notifications/", include("notifications.urls")),
+    # Built frontend assets (Vite output)
+    path(
+        "assets/<path:path>",
+        serve_static,
+        {"document_root": str(FRONTEND_DIST / "assets")},
+        name="frontend_assets",
+    ),
+    # Frontend SPA shell for the path-based routes.
+    re_path(
+        r"^(?:$|signup/?$|admin/dashboard/?$|pharmacist/dashboard/?$|customer/portal/?$)",
+        serve_frontend,
+        name="frontend",
+    ),
 ]
