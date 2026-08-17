@@ -11,6 +11,24 @@
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 
+const ACCESS_TOKEN_KEY = "pharvo_access_token";
+const REFRESH_TOKEN_KEY = "pharvo_refresh_token";
+
+/**
+ * Return the stored JWT access token, or null when the user is signed out.
+ */
+export function getAccessToken() {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+/**
+ * Remove all stored tokens (used on sign-out and expired sessions).
+ */
+export function clearStoredTokens() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
 export class ApiError extends Error {
   constructor(message, status = 0) {
     super(message);
@@ -63,10 +81,10 @@ export async function loginUser({ username, password, remember }) {
 
   // JWT-ready: persist tokens when the backend returns them.
   if (data.access) {
-    localStorage.setItem("pharvo_access_token", data.access);
+    localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
   }
   if (data.refresh) {
-    localStorage.setItem("pharvo_refresh_token", data.refresh);
+    localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh);
   }
 
   return data;
