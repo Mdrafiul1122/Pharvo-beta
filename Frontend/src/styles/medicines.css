@@ -1,0 +1,227 @@
+.pharvo-shell .medicines-page {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pharvo-shell .medicines-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.pharvo-shell .medicines-search {
+  position: relative;
+  display: flex;
+  min-width: 220px;
+  flex: 1;
+  align-items: center;
+}
+.pharvo-shell .medicines-search svg { position: absolute; left: 11px; color: var(--pharvo-text-muted); pointer-events: none; }
+.pharvo-shell .medicines-search input,
+.pharvo-shell .medicines-filter-grid select,
+.pharvo-shell .medicine-form-field input,
+.pharvo-shell .medicine-form-field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--pharvo-border);
+  border-radius: 8px;
+  outline: 0;
+  color: var(--pharvo-text);
+  background: #fff;
+  font-size: 13px;
+}
+.pharvo-shell .medicines-search input { padding: 9px 12px 9px 33px; }
+.pharvo-shell .medicines-filter-grid { display: contents; }
+.pharvo-shell .medicines-filter-grid label { display: block; }
+.pharvo-shell .medicines-filter-grid select { width: auto; max-width: 170px; padding: 9px 30px 9px 10px; cursor: pointer; }
+
+.pharvo-shell .medicine-primary-button,
+.pharvo-shell .medicine-secondary-button,
+.pharvo-shell .medicine-danger-button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pharvo-shell .medicine-primary-button { border: 0; color: #fff; background: var(--pharvo-primary); }
+.pharvo-shell .medicine-primary-button:hover { background: #1d4ed8; }
+.pharvo-shell .medicine-secondary-button { border: 1px solid var(--pharvo-border); color: var(--pharvo-text); background: #fff; font-weight: 600; }
+.pharvo-shell .medicine-danger-button { border: 0; color: #fff; background: var(--pharvo-danger-strong); }
+.pharvo-shell .medicines-add-button { flex: 0 0 auto; white-space: nowrap; }
+
+.pharvo-shell .medicines-table-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--pharvo-border);
+  border-radius: 12px;
+  background: #fff;
+}
+.pharvo-shell .medicines-table-scroll { max-width: 100%; overflow-x: auto; }
+.pharvo-shell .medicines-table-scroll:focus-visible { outline: 2px solid var(--pharvo-primary); outline-offset: -2px; }
+.pharvo-shell .medicines-table-card table { width: 100%; min-width: 1040px; border-collapse: collapse; color: var(--pharvo-text); }
+.pharvo-shell .medicines-table-card thead tr { background: var(--pharvo-muted); }
+.pharvo-shell .medicines-table-card th {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--pharvo-border);
+  color: var(--pharvo-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pharvo-shell .medicines-table-card tbody tr { border-bottom: 1px solid var(--pharvo-border); background: #fff; transition: background-color .1s; }
+.pharvo-shell .medicines-table-card tbody tr:last-child { border-bottom: 0; }
+.pharvo-shell .medicines-table-card tbody tr:hover { background: var(--pharvo-muted); }
+.pharvo-shell .medicines-table-card td { padding: 10px 14px; font-size: 12px; vertical-align: middle; }
+.pharvo-shell .medicine-name-cell { min-width: 180px; }
+.pharvo-shell .medicine-name-line { display: flex; align-items: center; gap: 5px; }
+.pharvo-shell .medicine-name-line strong { font-size: 13px; font-weight: 600; }
+.pharvo-shell .medicine-name-cell > span { display: block; margin-top: 1px; color: var(--pharvo-text-muted); font-size: 11px; }
+.pharvo-shell .medicine-muted-cell { color: var(--pharvo-text-muted); }
+.pharvo-shell .medicine-price-cell { font-weight: 600; }
+.pharvo-shell .medicine-controlled-label { flex: 0 0 auto; padding: 1px 4px; border-radius: 3px; color: var(--pharvo-danger-strong); background: var(--pharvo-danger-light); font-size: 9px; font-weight: 700; }
+.pharvo-shell .medicine-stock { font-size: 13px; font-weight: 700; }
+.pharvo-shell .medicine-stock--danger, .pharvo-shell .medicine-expiry--danger { color: var(--pharvo-danger-strong); }
+.pharvo-shell .medicine-stock--warning, .pharvo-shell .medicine-expiry--warning { color: var(--pharvo-warning-strong); }
+.pharvo-shell .medicine-expiry { white-space: nowrap; color: var(--pharvo-text-muted); }
+.pharvo-shell .medicine-expiry--danger { font-weight: 600; }
+
+.pharvo-shell .medicine-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pharvo-shell .medicine-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.pharvo-shell .medicine-badge--blue { color: var(--pharvo-primary); background: var(--pharvo-primary-light); }
+.pharvo-shell .medicine-badge--success { color: var(--pharvo-success-strong); background: var(--pharvo-success-light); }
+.pharvo-shell .medicine-badge--warning { color: #a16207; background: var(--pharvo-warning-light); }
+.pharvo-shell .medicine-badge--danger { color: var(--pharvo-danger-strong); background: var(--pharvo-danger-light); }
+.pharvo-shell .medicine-badge--amber { color: var(--pharvo-warning-strong); background: #fffbeb; }
+.pharvo-shell .medicine-badge--neutral { color: var(--pharvo-text-muted); background: var(--pharvo-muted-border); }
+
+.pharvo-shell .medicine-row-actions { display: flex; gap: 4px; }
+.pharvo-shell .medicine-row-actions button,
+.pharvo-shell .medicine-modal-close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--pharvo-border);
+  border-radius: 6px;
+  color: var(--pharvo-text-muted);
+  background: #fff;
+  cursor: pointer;
+}
+.pharvo-shell .medicine-row-actions button:hover { color: var(--pharvo-primary); border-color: var(--pharvo-primary-mid); background: #f8faff; }
+.pharvo-shell .medicine-row-actions button.is-danger { color: var(--pharvo-danger-strong); border-color: #fecaca; background: #fef2f2; }
+.pharvo-shell .medicines-empty { padding: 48px !important; color: var(--pharvo-text-muted); font-size: 13px !important; text-align: center; }
+.pharvo-shell .medicines-table-footer { display: flex; justify-content: space-between; gap: 20px; padding: 8px 16px; border-top: 1px solid var(--pharvo-border); color: var(--pharvo-text-muted); font-size: 11px; }
+
+.pharvo-shell .medicine-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(17,24,39,.45);
+  backdrop-filter: blur(3px);
+}
+.pharvo-shell .medicine-modal {
+  display: flex;
+  width: min(640px, 100%);
+  max-height: 90vh;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(0,0,0,.15);
+}
+.pharvo-shell .medicine-modal--view { width: min(520px, 100%); }
+.pharvo-shell .medicine-modal--delete { width: min(400px, 100%); }
+.pharvo-shell .medicine-modal-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-bottom: 1px solid var(--pharvo-border); }
+.pharvo-shell .medicine-modal-header--top { align-items: flex-start; padding: 20px 24px; }
+.pharvo-shell .medicine-modal-header h2,
+.pharvo-shell .medicine-delete-body h2 { margin: 0; color: var(--pharvo-text); font-size: 15px; font-weight: 700; }
+.pharvo-shell .medicine-modal-header--top h2 { font-size: 16px; }
+.pharvo-shell .medicine-modal-header p { margin: 2px 0 0; color: var(--pharvo-text-muted); font-size: 12px; }
+.pharvo-shell .medicine-modal-close { flex: 0 0 28px; border: 0; background: transparent; }
+.pharvo-shell .medicine-modal-body { overflow-y: auto; padding: 20px 24px; }
+.pharvo-shell .medicine-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+.pharvo-shell .medicine-form-field { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.pharvo-shell .medicine-form-field--span-2 { grid-column: span 2; }
+.pharvo-shell .medicine-form-field--span-3 { grid-column: span 3; }
+.pharvo-shell .medicine-form-field > span { color: var(--pharvo-text); font-size: 12px; font-weight: 600; }
+.pharvo-shell .medicine-form-field input,
+.pharvo-shell .medicine-form-field select { padding: 8px 10px; }
+.pharvo-shell .medicine-form-checks { display: flex; gap: 24px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--pharvo-border); }
+.pharvo-shell .medicine-form-checks label { display: flex; align-items: center; gap: 8px; color: var(--pharvo-text); font-size: 13px; font-weight: 500; cursor: pointer; }
+.pharvo-shell .medicine-form-checks input { width: 15px; height: 15px; accent-color: var(--pharvo-primary); }
+.pharvo-shell .medicine-modal-footer { display: flex; flex: 0 0 auto; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--pharvo-border); background: var(--pharvo-muted); }
+.pharvo-shell .medicine-view-title-line { display: flex; align-items: center; gap: 8px; }
+.pharvo-shell .medicine-view-body { display: flex; flex-direction: column; gap: 18px; }
+.pharvo-shell .medicine-section-label { margin: 0 0 8px; color: var(--pharvo-text-muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.pharvo-shell .medicine-price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pharvo-shell .medicine-price-card { padding: 10px 12px; border-radius: 8px; background: var(--pharvo-muted); }
+.pharvo-shell .medicine-price-card span { display: block; color: var(--pharvo-text-muted); font-size: 11px; }
+.pharvo-shell .medicine-price-card strong { display: block; margin-top: 2px; color: var(--pharvo-primary); font-size: 17px; font-weight: 800; }
+.pharvo-shell .medicine-details-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px 20px; }
+.pharvo-shell .medicine-details-grid span { display: block; color: var(--pharvo-text-muted); font-size: 11px; font-weight: 600; }
+.pharvo-shell .medicine-details-grid strong { display: block; margin-top: 2px; color: var(--pharvo-text); font-size: 13px; font-weight: 500; }
+.pharvo-shell .medicine-view-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.pharvo-shell .medicine-delete-body { padding: 24px 24px 20px; }
+.pharvo-shell .medicine-delete-icon { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 14px; border-radius: 12px; color: var(--pharvo-danger-strong); background: var(--pharvo-danger-light); }
+.pharvo-shell .medicine-delete-body p { margin: 6px 0 0; color: var(--pharvo-text-muted); font-size: 13px; line-height: 1.6; }
+.pharvo-shell .medicine-delete-actions { display: flex; gap: 10px; padding: 0 24px 22px; }
+.pharvo-shell .medicine-delete-actions button { flex: 1; }
+
+@media (max-width: 1260px) {
+  .pharvo-shell .medicines-toolbar { flex-wrap: wrap; }
+  .pharvo-shell .medicines-search { flex: 1 1 calc(100% - 150px); }
+  .pharvo-shell .medicines-filter-grid { display: grid; flex: 1 1 100%; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; order: 3; }
+  .pharvo-shell .medicines-filter-grid select { width: 100%; max-width: none; }
+}
+
+@media (max-width: 760px) {
+  .pharvo-shell .medicines-toolbar { align-items: stretch; }
+  .pharvo-shell .medicines-search { flex: 1 1 100%; order: 1; }
+  .pharvo-shell .medicines-add-button { flex: 1 1 auto; order: 2; }
+  .pharvo-shell .medicines-filter-grid { grid-template-columns: repeat(2, minmax(0,1fr)); order: 3; }
+  .pharvo-shell .medicines-table-footer { flex-direction: column; gap: 3px; }
+  .pharvo-shell .medicine-form-grid { grid-template-columns: 1fr 1fr; }
+  .pharvo-shell .medicine-form-field--span-3 { grid-column: span 2; }
+  .pharvo-shell .medicine-form-field--span-2 { grid-column: span 2; }
+  .pharvo-shell .medicine-form-checks { flex-direction: column; gap: 10px; }
+}
+
+@media (max-width: 480px) {
+  .pharvo-shell .medicines-filter-grid { grid-template-columns: 1fr; }
+  .pharvo-shell .medicine-modal-backdrop { align-items: flex-end; padding: 0; }
+  .pharvo-shell .medicine-modal { width: 100%; max-height: 94vh; border-radius: 14px 14px 0 0; }
+  .pharvo-shell .medicine-modal-header, .pharvo-shell .medicine-modal-header--top { padding: 16px; }
+  .pharvo-shell .medicine-modal-body { padding: 16px; }
+  .pharvo-shell .medicine-modal-footer { padding: 12px 16px 16px; }
+  .pharvo-shell .medicine-form-grid { grid-template-columns: 1fr; }
+  .pharvo-shell .medicine-form-field--span-2, .pharvo-shell .medicine-form-field--span-3 { grid-column: span 1; }
+  .pharvo-shell .medicine-price-grid { grid-template-columns: 1fr; }
+  .pharvo-shell .medicine-details-grid { grid-template-columns: 1fr; }
+  .pharvo-shell .medicine-delete-actions { padding: 0 16px 18px; }
+}
