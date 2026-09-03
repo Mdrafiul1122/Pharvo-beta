@@ -34,7 +34,7 @@ export function getStoredUser() {
   try {
     const raw = localStorage.getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch (err) {
+  } catch {
     return null;
   }
 }
@@ -129,7 +129,7 @@ async function requestJson(path, { method = "GET", body, token } = {}) {
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
-  } catch (err) {
+  } catch {
     throw new ApiError("Unable to connect to the PHARVO service. Please try again.");
   }
 
@@ -170,17 +170,38 @@ export async function loginUser({ username, password }) {
 /**
  * Create a pharmacist or customer account (admin is never allowed publicly).
  *
+ * The backend `SignupSerializer` requires a `username` and returns ONLY the
+ * created user (no tokens), so we:
+ *   1. build the backend payload (username derived from the email, full_name
+ *      split into first/last name),
+ *   2. POST /auth/signup/,
+ *   3. immediately sign in to obtain session tokens (the backend exposes no
+ *      token pair on signup).
+ *
  * @param {{ full_name: string, email: string, password: string,
  *           confirm_password: string, role: string }} details
  * @returns {Promise<{ access: string, refresh: string, user: object }>}
  */
 export async function signupUser(details) {
-  const data = await requestJson("/auth/signup/", {
+  const { full_name, email, password, role } = details;
+  const [first = "", ...rest] = String(full_name || "").trim().split(/\s+/);
+  const lastName = rest.join(" ");
+  const username = String(email || "").trim().split("@")[0] || `user_${Date.now()}`;
+
+  await requestJson("/auth/signup/", {
     method: "POST",
-    body: details,
+    body: {
+      username,
+      password,
+      first_name: first,
+      last_name: lastName,
+      email: String(email || "").trim(),
+      role,
+    },
   });
-  persistSession(data);
-  return data;
+
+  // Sign up never returns tokens, so sign in to establish the session.
+  return loginUser({ username, password });
 }
 
 /**

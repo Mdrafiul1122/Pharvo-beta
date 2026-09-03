@@ -282,15 +282,15 @@ const mapPurchase = (s) => ({
   amount: Number(s.payable_amount || s.total_amount || 0),
   method: PAYMENT_DISPLAY[s.payment_method] || 'Cash',
   status: 'Paid',
-  products: Array.isArray(s.items) ? s.items.map((i) => `${i.product_name || 'Item'} ×${i.quantity}`) : [],
+  products: Array.isArray(s.items) ? s.items.map((i) => `${i.product?.name || i.product_name || 'Item'} ×${i.quantity}`) : [],
 });
 
 const mapCrmReminder = (r) => ({
   id: `RMD-${r.id}`,
-  customerId: r.customer ? `PHC-${String(r.customer).padStart(3, '0')}` : null,
-  customer: r.customer_name || '—',
-  tier: 'Regular',
-  medicine: r.product_name || r.title || '—',
+  customerId: r.customer && r.customer.id ? `PHC-${String(r.customer.id).padStart(3, '0')}` : null,
+  customer: (r.customer && r.customer.name) || '—',
+  tier: (r.customer && crmTier(r.customer.membership_tier)) || 'Regular',
+  medicine: (r.product && r.product.name) || r.title || '—',
   dose: '—',
   frequency: r.reminder_time ? `Reminder ${r.reminder_time}` : '—',
   startDate: r.created_at ? r.created_at.slice(0, 10) : '—',
