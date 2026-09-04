@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from crm.services import calculate_crm_discount
 from inventory.models import InventoryProduct
 from sales.models import Sale, SaleItem, SalePayment
 from sales.permissions import IsPosStaff
@@ -48,7 +49,7 @@ def _generate_invoice_number(when):
 def _create_sale(user, data):
     items = data['items']
     payments = data['payments']
-    discount = _money(data.get('discount', 0))
+    manual_discount = _money(data.get('discount', 0))
     customer = data.get('customer')
 
     with transaction.atomic():
@@ -93,7 +94,20 @@ def _create_sale(user, data):
             prepared_items.append((product, item, unit, qty, price, quantity_pcs, subtotal))
 
         total_amount = _money(grand_total)
-        payable_amount = _money(total_amount - discount)
+
+        # Calculate CRM automatic discount
+        crm_result = calculate_crm_discount(
+            customer,
+            [{'product': pi[0], 'quantity': pi[3], 'unit_price': pi[4]} for pi in prepared_items],
+        )
+        crm_discount = crm_result['crm_discount']
+
+        # Combine manual + CRM discount (no duplication)
+        total_discount = _money(manual_discount + crm_discount)
+        if total_discount > total_amount:
+            total_discount = total_amount
+
+        payable_amount = _money(total_amount - total_discount)
         if payable_amount < 0:
             raise ValidationError('Discount exceeds total amount.')
 
@@ -111,7 +125,7 @@ def _create_sale(user, data):
             id=sale_id,
             invoice_number=invoice_number,
             total_amount=total_amount,
-            discount=discount,
+            discount=total_discount,
             payable_amount=payable_amount,
             payment_method=payment_method,
             sale_date=sale_date,
@@ -153,11 +167,21 @@ def _create_sale(user, data):
                 updated_at=now,
             )
 
-        return (
+        sale_obj = (
             Sale.objects.select_related('customer', 'user')
             .prefetch_related('items__product', 'payments')
             .get(pk=sale.pk)
         )
+
+        # Attach CRM discount info for the response
+        sale_obj._crm_discount_info = {
+            'manual_discount': str(manual_discount),
+            'crm_discount': str(crm_discount),
+            'crm_discount_breakdown': crm_result['breakdown'],
+            'crm_eligible': crm_result['eligible'],
+        }
+
+        return sale_obj
 
 
 class CheckoutView(APIView):
@@ -172,6 +196,53 @@ class CheckoutView(APIView):
         except ValidationError as exc:
             return Response({'detail': list(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(SaleSerializer(sale).data, status=status.HTTP_201_CREATED)
+
+
+class DiscountPreviewView(APIView):
+    permission_classes = [IsPosStaff]
+
+    def post(self, request):
+        customer = request.data.get('customer')
+        items = request.data.get('items', [])
+        if not items or customer is None:
+            return Response({
+                'crm_discount': '0.00',
+                'breakdown': [],
+                'eligible': False,
+                'rate': '0',
+            })
+
+        from customers.models import Customer
+        try:
+            customer_obj = Customer.objects.get(pk=customer)
+        except (Customer.DoesNotExist, TypeError, ValueError):
+            return Response({
+                'crm_discount': '0.00',
+                'breakdown': [],
+                'eligible': False,
+                'rate': '0',
+            })
+
+        from inventory.models import InventoryProduct
+        prepared = []
+        for item in items:
+            try:
+                product = InventoryProduct.objects.get(pk=item.get('product'))
+                prepared.append({
+                    'product': product,
+                    'quantity': item.get('quantity', 1),
+                    'unit_price': Decimal(str(item.get('unit_price', 0))),
+                })
+            except (InventoryProduct.DoesNotExist, TypeError, ValueError):
+                continue
+
+        result = calculate_crm_discount(customer_obj, prepared)
+        return Response({
+            'crm_discount': str(result['crm_discount']),
+            'breakdown': result['breakdown'],
+            'eligible': result['eligible'],
+            'rate': result['rate'],
+        })
 
 
 class SaleListView(generics.ListAPIView):

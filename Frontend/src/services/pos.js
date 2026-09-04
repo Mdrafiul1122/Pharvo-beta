@@ -117,3 +117,20 @@ export async function fetchSales(params = {}) {
   const data = await request(`/sales/${query ? `?${query}` : ""}`);
   return (Array.isArray(data) ? data : []).map(mapSale);
 }
+
+/**
+ * Preview CRM automatic discount for a given customer + cart.
+ *
+ * @param {number|null} customerId
+ * @param {Array<{product:number, quantity:number, unit_price:number}>} items
+ * @returns {Promise<{crm_discount:string, breakdown:Array, eligible:boolean, rate:string}>}
+ */
+export async function fetchDiscountPreview(customerId, items) {
+  if (customerId == null || !items.length) {
+    return { crm_discount: "0.00", breakdown: [], eligible: false };
+  }
+  return request("/pos/discount-preview/", {
+    method: "POST",
+    body: { customer: customerId, items },
+  });
+}

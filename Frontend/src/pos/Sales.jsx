@@ -1,10 +1,10 @@
-﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Search, Plus, Minus, X, Users, Check, ShoppingCart, CheckCircle, AlertTriangle, ShieldAlert, Info, Pause,
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/medicine';
 import { fetchCustomers } from '../services/customer';
-import { checkout, checkInteractions } from '../services/pos';
+import { checkout, checkInteractions, fetchDiscountPreview } from '../services/pos';
 import { ApiError } from '../services/api';
 import { formatBreakdownShort, formatEquivalents } from '../utils/units';
 
@@ -75,10 +75,7 @@ const INTERACTION_LEVELS = {
   },
 };
 
-function severityRank(level) {
-  const order = ['caution', 'avoid', 'high_risk', 'contraindicated'];
-  return order.indexOf(level);
-}
+
 
 export function SalesModule() {
   // Filters & Search
@@ -104,6 +101,13 @@ export function SalesModule() {
   // Cart
   const [cart, setCart] = useState([]);
   const [discount, setDiscount] = useState('');
+
+  // CRM automatic discount (fetched from backend preview endpoint)
+  const [crmDiscount, setCrmDiscount] = useState(0);
+  const [crmRate, setCrmRate] = useState(0);
+  const [crmBreakdown, setCrmBreakdown] = useState([]);
+  const crmPreviewTimer = useRef(null);
+  const crmPreviewSeq = useRef(0);
 
   // Payment
   const [payMethod, setPayMethod] = useState('cash');
@@ -154,7 +158,7 @@ export function SalesModule() {
     fetchCategories()
       .then((data) => setCategories(data || []))
       .catch(() => setCategories([]));
-    loadProducts();
+    Promise.resolve().then(loadProducts);
   }, [loadProducts]);
 
   useEffect(() => {
@@ -173,21 +177,21 @@ export function SalesModule() {
     try {
       const data = await fetchCustomers(search);
       setCustomers(data || []);
-    } catch (err) {
+    } catch {
       setCustomers([]);
     }
   }, []);
 
   useEffect(() => {
     if (!showCustomerModal || customers.length > 0) return;
-    loadCustomers();
+    Promise.resolve().then(loadCustomers);
   }, [showCustomerModal, customers.length, loadCustomers]);
 
   // Live drug-interaction check whenever the cart changes.
   useEffect(() => {
     if (cart.length < 2) {
-      setInteractionWarnings([]);
       lastCheckedSig.current = '';
+      Promise.resolve().then(() => setInteractionWarnings([]));
       return;
     }
     const signature = cart.map(i => i.productId).sort((a, b) => a - b).join(',');
@@ -205,6 +209,43 @@ export function SalesModule() {
     }, 500);
     return () => clearTimeout(interactionTimer.current);
   }, [cart]);
+
+  // Live CRM discount preview whenever customer or cart changes.
+  useEffect(() => {
+    if (customer.id === null || cart.length === 0) {
+      Promise.resolve().then(() => {
+        setCrmDiscount(0);
+        setCrmRate(0);
+        setCrmBreakdown([]);
+      });
+      return;
+    }
+    const items = cart.map(item => ({
+      product: item.productId,
+      quantity: item.qty,
+      unit_price: item.unitPrice,
+    }));
+    clearTimeout(crmPreviewTimer.current);
+    crmPreviewTimer.current = setTimeout(() => {
+      const seq = ++crmPreviewSeq.current;
+      fetchDiscountPreview(customer.id, items)
+        .then(data => {
+          if (seq === crmPreviewSeq.current) {
+            setCrmDiscount(Number(data.crm_discount) || 0);
+            setCrmRate(Number(data.rate) || 0);
+            setCrmBreakdown(data.breakdown || []);
+          }
+        })
+        .catch(() => {
+          if (seq === crmPreviewSeq.current) {
+            setCrmDiscount(0);
+            setCrmRate(0);
+            setCrmBreakdown([]);
+          }
+        });
+    }, 400);
+    return () => clearTimeout(crmPreviewTimer.current);
+  }, [customer, cart]);
 
   // Add medicine to cart with the selected selling unit (pc / strip / box)
   const addToCart = (med, unit = 'pc') => {
@@ -265,6 +306,9 @@ export function SalesModule() {
   const clearCart = () => {
     setCart([]);
     setDiscount('');
+    setCrmDiscount(0);
+    setCrmRate(0);
+    setCrmBreakdown([]);
     setCashReceived('');
     setDigitalReceived('');
     setPendingApproval(null);
@@ -275,8 +319,9 @@ export function SalesModule() {
 
   const totalItemCount = cart.reduce((acc, item) => acc + item.qty, 0);
   const subtotal = cart.reduce((acc, item) => acc + item.total, 0);
-  const discountAmount = Math.min(Number(discount) || 0, subtotal);
-  const grandTotal = Math.max(0, subtotal - discountAmount);
+  const manualDiscountPct = Math.min(Math.max(Number(discount) || 0, 0), 100);
+  const manualDiscountAmount = Math.min(subtotal * manualDiscountPct / 100, Math.max(0, subtotal - crmDiscount));
+  const grandTotal = Math.max(0, subtotal - crmDiscount - manualDiscountAmount);
 
   const buildPayments = () => {
     if (payMethod === 'cash') {
@@ -312,7 +357,7 @@ export function SalesModule() {
           unit_price: item.unitPrice,
         })),
         customer: customer.id,
-        discount: discountAmount,
+        discount: manualDiscountAmount,
         payments,
         approve_sensitive: approveSensitive,
         approve_interactions: approveInteractions,
@@ -376,7 +421,7 @@ export function SalesModule() {
 
   return (
     <div className="w-full flex flex-col gap-4 font-sans text-slate-800">
-      {/* ΓöÇΓöÇΓöÇ ROW 1: SEARCH / FILTERS BAR & CUSTOMER SELECTOR BAR ΓöÇΓöÇΓöÇ */}
+      {/* ─── ROW 1: SEARCH / FILTERS BAR & CUSTOMER SELECTOR BAR ─── */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-center">
         <div className="xl:col-span-7 flex items-center gap-2.5">
           <div className="relative flex-1 min-w-[200px]">
@@ -453,7 +498,7 @@ export function SalesModule() {
         </div>
       </div>
 
-      {/* ΓöÇΓöÇΓöÇ ROW 2: MEDICINE CATALOG TABLE & SALES PANEL ΓöÇΓöÇΓöÇ */}
+      {/* ─── ROW 2: MEDICINE CATALOG TABLE & SALES PANEL ─── */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
         <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs flex flex-col">
           <div className="overflow-x-auto max-h-[640px] overflow-y-auto scrollbar-thin">
@@ -462,7 +507,7 @@ export function SalesModule() {
                 <tr className="text-[11px] font-semibold uppercase text-slate-400 tracking-wider">
                   <th className="py-3 px-4 w-[32%]">MEDICINE</th>
                   <th className="py-3 px-3 w-[9%]">CATEGORY</th>
-                  <th className="py-3 px-3 w-[22%]">PRICES (αº│)</th>
+                  <th className="py-3 px-3 w-[22%]">PRICES (৳)</th>
                   <th className="py-3 px-3 w-[8%]">STOCK</th>
                   <th className="py-3 px-4 w-[29%] text-center">ADD UNIT</th>
                 </tr>
@@ -499,7 +544,7 @@ export function SalesModule() {
                           </div>
                           <div className="text-[12px] text-slate-400 font-normal mt-0.5 leading-none">{m.brand || m.barcode}</div>
                         </td>
-                        <td className="py-3 px-3 text-slate-500 font-normal whitespace-nowrap">{m.category_name || 'ΓÇö'}</td>
+                        <td className="py-3 px-3 text-slate-500 font-normal whitespace-nowrap">{m.category_name || '—'}</td>
                         <td className="py-3 px-3 whitespace-nowrap">
                           <div className="flex flex-col gap-0.5 text-[12px] leading-tight">
                             {[
@@ -536,7 +581,7 @@ export function SalesModule() {
                                   disabled={!enabled}
                                   title={
                                     enabled
-                                      ? `Add 1 ${UNIT_META[unit].label} ┬╖ αº│${Number(price).toLocaleString()}`
+                                      ? `Add 1 ${UNIT_META[unit].label} · ৳${Number(price).toLocaleString()}`
                                       : price == null
                                         ? `${UNIT_META[unit].label} price not configured`
                                         : `No full ${UNIT_META[unit].label} in stock`
@@ -647,7 +692,7 @@ export function SalesModule() {
                           <div className="flex items-center gap-1.5">
                             <span className="truncate block max-w-[96px]">{item.name}</span>
                             <span className="text-[11px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 rounded px-1 leading-4 flex-shrink-0">
-                              {item.qty} ├ù {item.unitLabel}
+                              {item.qty} × {item.unitLabel}
                             </span>
                           </div>
                           <span className={`text-[11px] ${item.qty > item.availableStock ? 'text-red-500 font-semibold' : 'text-slate-400'}`}>
@@ -665,10 +710,10 @@ export function SalesModule() {
                             </button>
                           </div>
                         </td>
-                        <td className="py-2.5 px-1 text-right text-slate-500 font-normal whitespace-nowrap">αº│{item.unitPrice.toLocaleString()}</td>
-                        <td className="py-2.5 px-1 text-right font-semibold text-slate-900 whitespace-nowrap">αº│{item.total.toLocaleString()}</td>
+                        <td className="py-2.5 px-1 text-right text-slate-500 font-normal whitespace-nowrap">৳{item.unitPrice.toLocaleString()}</td>
+                        <td className="py-2.5 px-1 text-right font-semibold text-slate-900 whitespace-nowrap">৳{item.total.toLocaleString()}</td>
                         <td className="py-2.5 pl-1 text-center">
-                          <button onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-red-600 cursor-pointer font-normal">├ù</button>
+                          <button onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-red-600 cursor-pointer font-normal">×</button>
                         </td>
                       </tr>
                     ))}
@@ -682,25 +727,37 @@ export function SalesModule() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 flex flex-col gap-2.5">
             <div className="flex items-center justify-between text-xs text-slate-500 font-normal">
               <span>Subtotal ({totalItemCount} items)</span>
-              <span className="font-medium text-slate-900">αº│{subtotal.toLocaleString()}</span>
+              <span className="font-medium text-slate-900">৳{subtotal.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-normal">Discount</span>
+              <span className="text-slate-500 font-normal">CRM Auto Discount</span>
+              <span className={`font-medium tabular-nums ${crmDiscount > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
+                {crmRate > 0 ? `-${Math.round(crmRate * 100)}%` : '0%'}
+              </span>
+            </div>
+            {crmDiscount > 0 && crmBreakdown.length > 0 && (
+              <div className="text-[11px] text-slate-400 px-0.5 -mt-1">
+                {crmBreakdown.filter(b => b.is_eligible).map(b => b.product_name).join(', ')}
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-normal">Manual Discount</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500 font-normal">αº│</span>
                 <input
                   type="number"
                   min={0}
+                  max={100}
                   value={discount}
                   onChange={e => setDiscount(e.target.value)}
                   placeholder="0"
                   className="w-20 px-1.5 py-0.5 text-center text-xs font-normal border border-slate-200 rounded outline-none"
                 />
+                <span className="text-slate-500 font-normal">%</span>
               </div>
             </div>
             <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
               <span className="text-sm font-semibold text-slate-900">Grand Total</span>
-              <span className="text-2xl font-bold text-blue-600">αº│{grandTotal.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-blue-600">৳{grandTotal.toLocaleString()}</span>
             </div>
           </div>
 
@@ -732,10 +789,10 @@ export function SalesModule() {
                 <input
                   value={cashReceived}
                   onChange={e => setCashReceived(e.target.value)}
-                  placeholder={`αº│${grandTotal}`}
+                  placeholder={`৳${grandTotal}`}
                   className="w-full px-3 py-2 text-xs font-normal rounded-lg border border-slate-200 outline-none bg-slate-50/50"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">Change: αº│{Math.max(0, (Number(cashReceived) || 0) - grandTotal).toLocaleString()}</p>
+                <p className="text-[11px] text-slate-400 mt-1">Change: ৳{Math.max(0, (Number(cashReceived) || 0) - grandTotal).toLocaleString()}</p>
               </div>
             )}
 
@@ -746,7 +803,7 @@ export function SalesModule() {
                   <input
                     value={digitalReceived}
                     onChange={e => setDigitalReceived(e.target.value)}
-                    placeholder={`αº│${grandTotal}`}
+                    placeholder={`৳${grandTotal}`}
                     className="flex-1 px-3 py-2 text-xs font-normal rounded-lg border border-slate-200 outline-none bg-slate-50/50"
                   />
                 </div>
@@ -756,20 +813,20 @@ export function SalesModule() {
             {payMethod === 'split' && (
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[12px] font-normal text-slate-500 block mb-1">Cash (αº│)</label>
+                  <label className="text-[12px] font-normal text-slate-500 block mb-1">Cash (৳)</label>
                   <input
                     value={cashReceived}
                     onChange={e => setCashReceived(e.target.value)}
-                    placeholder="αº│0"
+                    placeholder="৳0"
                     className="w-full px-3 py-2 text-xs font-normal rounded-lg border border-slate-200 outline-none bg-slate-50/50"
                   />
                 </div>
                 <div>
-                  <label className="text-[12px] font-normal text-slate-500 block mb-1">bKash (αº│)</label>
+                  <label className="text-[12px] font-normal text-slate-500 block mb-1">bKash (৳)</label>
                   <input
                     value={digitalReceived}
                     onChange={e => setDigitalReceived(e.target.value)}
-                    placeholder={`αº│${grandTotal}`}
+                    placeholder={`৳${grandTotal}`}
                     className="w-full px-3 py-2 text-xs font-normal rounded-lg border border-slate-200 outline-none bg-slate-50/50"
                   />
                 </div>
@@ -808,14 +865,14 @@ export function SalesModule() {
                 }`}
               >
                 <Check size={15} />
-                <span>{checkingOut ? 'Processing...' : `Complete Sale ┬╖ αº│${grandTotal.toLocaleString()}`}</span>
+                <span>{checkingOut ? 'Processing...' : `Complete Sale · ৳${grandTotal.toLocaleString()}`}</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ΓöÇΓöÇΓöÇ SELECT CUSTOMER MODAL ΓöÇΓöÇΓöÇ */}
+      {/* ─── SELECT CUSTOMER MODAL ─── */}
       {showCustomerModal && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-100">
@@ -847,7 +904,7 @@ export function SalesModule() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-slate-900">Walk-in Customer</div>
-                    <span className="text-[11px] text-slate-400 font-normal block mt-0.5">No membership ┬╖ no automatic discount</span>
+                    <span className="text-[11px] text-slate-400 font-normal block mt-0.5">No membership · no automatic discount</span>
                   </div>
                 </div>
                 {customer.id === null && <Check size={16} className="text-blue-600 ml-1" />}
@@ -888,7 +945,7 @@ export function SalesModule() {
         </div>
       )}
 
-      {/* ΓöÇΓöÇΓöÇ SENSITIVE APPROVAL MODAL ΓöÇΓöÇΓöÇ */}
+      {/* ─── SENSITIVE APPROVAL MODAL ─── */}
       {pendingApproval && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6">
@@ -926,7 +983,7 @@ export function SalesModule() {
         </div>
       )}
 
-      {/* ΓöÇΓöÇΓöÇ DRUG INTERACTION REVIEW MODAL ΓöÇΓöÇΓöÇ */}
+      {/* ─── DRUG INTERACTION REVIEW MODAL ─── */}
       {pendingInteractions && pendingInteractions.length > 0 && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-100">
@@ -977,7 +1034,7 @@ export function SalesModule() {
                 disabled={checkingOut}
                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs cursor-pointer shadow-sm disabled:opacity-50"
               >
-                {checkingOut ? 'Processing...' : 'I\u2019ve Reviewed ΓÇö Complete Sale'}
+                {checkingOut ? 'Processing...' : 'I\u2019ve Reviewed — Complete Sale'}
               </button>
               <button
                 onClick={() => setPendingInteractions(null)}
@@ -990,7 +1047,7 @@ export function SalesModule() {
         </div>
       )}
 
-      {/* ΓöÇΓöÇΓöÇ SALE COMPLETED INVOICE MODAL ΓöÇΓöÇΓöÇ */}
+      {/* ─── SALE COMPLETED INVOICE MODAL ─── */}
       {receipt && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6">
@@ -1009,30 +1066,45 @@ export function SalesModule() {
                 <div className="flex flex-col gap-0.5 py-1 border-y border-slate-200 my-1">
                   {receipt.items.map((it, i) => (
                     <div key={i} className="flex justify-between">
-                      <span>{it.product_name} ├ù {it.quantity} {(it.unit_display || 'pc').toLowerCase()}</span>
-                      <span>αº│{Number(it.subtotal).toLocaleString()}</span>
+                      <span>{it.product_name} × {it.quantity} {(it.unit_display || 'pc').toLowerCase()}</span>
+                      <span>৳{Number(it.subtotal).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
               )}
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span className="font-medium text-slate-900">αº│{Number(receipt.total_amount).toLocaleString()}</span>
+                <span className="font-medium text-slate-900">৳{Number(receipt.total_amount).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Discount:</span>
-                <span className="text-emerald-600">-αº│{Number(receipt.discount || 0).toLocaleString()}</span>
-              </div>
+              {receipt.crm_discount && Number(receipt.crm_discount) > 0 && (
+                <div className="flex justify-between">
+                  <span>CRM Discount:</span>
+                  <span className="text-emerald-600">-৳{Number(receipt.crm_discount).toLocaleString()}</span>
+                </div>
+              )}
+              {receipt.manual_discount && Number(receipt.manual_discount) > 0 && (
+                <div className="flex justify-between">
+                  <span>Manual Discount:</span>
+                  <span className="text-emerald-600">-৳{Number(receipt.manual_discount).toLocaleString()}</span>
+                </div>
+              )}
+              {(!receipt.crm_discount || Number(receipt.crm_discount) === 0) &&
+               (!receipt.manual_discount || Number(receipt.manual_discount) === 0) && (
+                <div className="flex justify-between">
+                  <span>Discount:</span>
+                  <span>-৳{Number(receipt.discount || 0).toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between pt-1 border-t border-slate-200">
                 <span className="font-medium">Total Paid:</span>
-                <span className="font-bold text-slate-900">αº│{Number(receipt.payable_amount).toLocaleString()}</span>
+                <span className="font-bold text-slate-900">৳{Number(receipt.payable_amount).toLocaleString()}</span>
               </div>
               {receipt.payments && (
                 <div className="flex flex-col gap-0.5">
                   {receipt.payments.map((p, i) => (
                     <div key={i} className="flex justify-between">
                       <span className="capitalize">{p.method_display}</span>
-                      <span>αº│{Number(p.amount).toLocaleString()}</span>
+                      <span>৳{Number(p.amount).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>

@@ -53,6 +53,11 @@ class SaleSerializer(serializers.ModelSerializer):
     user = PosUserSerializer(read_only=True)
     items = SaleItemSerializer(many=True, read_only=True)
     payments = SalePaymentSerializer(many=True, read_only=True)
+    # CRM discount fields (populated at checkout time, absent in list views)
+    manual_discount = serializers.SerializerMethodField()
+    crm_discount = serializers.SerializerMethodField()
+    crm_discount_breakdown = serializers.SerializerMethodField()
+    crm_eligible = serializers.SerializerMethodField()
 
     class Meta:
         model = Sale
@@ -63,6 +68,10 @@ class SaleSerializer(serializers.ModelSerializer):
             'user',
             'total_amount',
             'discount',
+            'manual_discount',
+            'crm_discount',
+            'crm_discount_breakdown',
+            'crm_eligible',
             'payable_amount',
             'payment_method',
             'sale_date',
@@ -70,6 +79,22 @@ class SaleSerializer(serializers.ModelSerializer):
             'items',
             'payments',
         ]
+
+    def get_manual_discount(self, obj):
+        info = getattr(obj, '_crm_discount_info', None)
+        return info['manual_discount'] if info else None
+
+    def get_crm_discount(self, obj):
+        info = getattr(obj, '_crm_discount_info', None)
+        return info['crm_discount'] if info else None
+
+    def get_crm_discount_breakdown(self, obj):
+        info = getattr(obj, '_crm_discount_info', None)
+        return info['crm_discount_breakdown'] if info else None
+
+    def get_crm_eligible(self, obj):
+        info = getattr(obj, '_crm_discount_info', None)
+        return info['crm_eligible'] if info else None
 
 
 class CheckoutItemSerializer(serializers.Serializer):
