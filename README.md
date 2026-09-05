@@ -114,3 +114,16 @@ Run the automated UI test suite (requires a running backend + frontend):
 cd Frontend\tests
 python run_all_tests.py
 ```
+
+Latest verified result:
+
+- Total Tests: 47
+- Passed: 47
+- Failed: 0
+- Errors: 0
+- Skipped: 0
+
+## Documentation
+
+- [Database Setup Guide](docs/database-setup.md)
+- [System Architecture](docs/system-architecture.md)
