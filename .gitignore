@@ -1,0 +1,13 @@
+
+# Python generated files
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Frontend generated files
+node_modules/
+.next/
+
+# Local environment
+.env
