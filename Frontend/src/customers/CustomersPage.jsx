@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Search,
   Users,
@@ -65,7 +65,7 @@ const BLANK_FORM = {
   notes: "",
 };
 
-export default function CustomersPage() {
+export default function CustomersPage({ onViewProfile }) {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -193,7 +193,8 @@ export default function CustomersPage() {
         email: form.email.trim() || `${form.name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
         address: form.address.trim() || "—",
         date_of_birth: form.date_of_birth || null,
-        membership_tier: form.membership_tier,
+        membership_tier: form.membership_tier || "regular",
+        loyalty_points: editingId ? (customers.find((c) => c.id === editingId)?.loyalty_points ?? 0) : 0,
         notes: form.notes.trim(),
       };
       if (modalMode === "edit" && editingId) {
@@ -307,11 +308,23 @@ export default function CustomersPage() {
                   <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-semibold text-[11px] flex items-center justify-center shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => (onViewProfile ? onViewProfile(c) : openProfile(c))}
+                          className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[11px] flex items-center justify-center shrink-0 cursor-pointer transition-colors shadow-2xs"
+                          title={`View ${c.name}'s profile`}
+                        >
                           {initials(c.name)}
-                        </div>
+                        </button>
                         <div className="min-w-0">
-                          <div className="font-semibold text-[13px] text-slate-900 leading-snug">{c.name}</div>
+                          <button
+                            type="button"
+                            onClick={() => (onViewProfile ? onViewProfile(c) : openProfile(c))}
+                            className="font-semibold text-[13px] text-slate-900 hover:text-blue-600 hover:underline leading-snug text-left cursor-pointer transition-colors block truncate"
+                            title={`View ${c.name}'s profile`}
+                          >
+                            {c.name}
+                          </button>
                           <div className="text-[11px] text-slate-400 font-normal">ID #{c.id}</div>
                         </div>
                       </div>
@@ -337,8 +350,8 @@ export default function CustomersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
-                          onClick={() => openProfile(c)}
-                          title="View profile"
+                          onClick={() => (onViewProfile ? onViewProfile(c) : openProfile(c))}
+                          title="View customer profile"
                           className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
                         >
                           <Eye size={14} />
@@ -390,6 +403,18 @@ export default function CustomersPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
+                {onViewProfile && (
+                  <button
+                    onClick={() => {
+                      const c = selectedCustomer;
+                      setSelectedCustomer(null);
+                      onViewProfile(c);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <Eye size={13} /> Full CRM Profile
+                  </button>
+                )}
                 <button
                   onClick={() => openEdit(selectedCustomer)}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-medium flex items-center gap-1.5 cursor-pointer"

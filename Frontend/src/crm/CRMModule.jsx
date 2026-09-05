@@ -1897,10 +1897,36 @@ function CustomerProfileView({ customerId, customers, reminders: allReminders = 
   });
 
   const customer = useMemo(() => {
-    return customers.find((c) => c.id === customerId) || customers[0];
+    if (!customers || customers.length === 0) return null;
+    const targetStr = String(customerId || '').trim();
+    const targetNum = Number(targetStr.replace(/\D/g, ''));
+    const matched = customers.find((c) => {
+      if (!c) return false;
+      if (c.id === customerId) return true;
+      if (String(c.id).toLowerCase() === targetStr.toLowerCase()) return true;
+      if (!isNaN(targetNum) && targetNum > 0) {
+        const cNum = Number(String(c.id).replace(/\D/g, ''));
+        if (cNum === targetNum) return true;
+      }
+      if (c.phone && c.phone === targetStr) return true;
+      if (c.name && c.name.toLowerCase() === targetStr.toLowerCase()) return true;
+      return false;
+    });
+    return matched || customers[0];
   }, [customerId, customers]);
 
-  const rawCustomerId = customer ? Number(customer.id.replace('PHC-', '')) : null;
+  const rawCustomerId = customer
+    ? Number(String(customer.id).replace(/\D/g, '')) || null
+    : null;
+
+  if (!customer) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-xs text-slate-400">
+        <RefreshCw size={14} className="animate-spin" />
+        <span>Loading customer profile...</span>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!customer) return;
@@ -2662,14 +2688,20 @@ function CustomerProfileView({ customerId, customers, reminders: allReminders = 
 
 // ─── 9. Main Exported CRM Module ──────────────────────────────────────────────
 
-export function CRMModule({ onNavigate, initialTab = 'dashboard' }) {
+export function CRMModule({ onNavigate, initialTab = 'dashboard', initialCustomerId = null, onBackToCustomers = null }) {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId);
   const [customers, setCustomers] = useState([]);
   const [reminders, setReminders] = useState([]);
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    if (initialCustomerId !== undefined && initialCustomerId !== null) {
+      setSelectedCustomerId(initialCustomerId);
+    }
+  }, [initialCustomerId]);
 
   const meta = PAGE_META[activeTab] || PAGE_META.dashboard;
 
@@ -2741,13 +2773,13 @@ export function CRMModule({ onNavigate, initialTab = 'dashboard' }) {
       )}
 
       {/* Loading / Error states */}
-      {!selectedCustomerId && loading && (
+      {loading && (
         <div className="flex items-center justify-center gap-2 py-12 text-xs text-slate-400">
           <RefreshCw size={14} className="animate-spin" />
           <span>Loading CRM data...</span>
         </div>
       )}
-      {!selectedCustomerId && loadError && (
+      {!loading && loadError && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
           <AlertTriangle size={14} className="shrink-0" />
           <span>{loadError}</span>
@@ -2755,14 +2787,20 @@ export function CRMModule({ onNavigate, initialTab = 'dashboard' }) {
       )}
 
       {/* Tab Views Routing */}
-      {selectedCustomerId ? (
-        <CustomerProfileView
-          customerId={selectedCustomerId}
-          customers={customers}
-          reminders={reminders}
-          onBack={() => setSelectedCustomerId(null)}
-        />
-      ) : loading || loadError ? null : activeTab === 'dashboard' ? (
+      {!loading && !loadError && (
+        selectedCustomerId ? (
+          <CustomerProfileView
+            customerId={selectedCustomerId}
+            customers={customers}
+            reminders={reminders}
+            onBack={() => {
+              setSelectedCustomerId(null);
+              if (onBackToCustomers) {
+                onBackToCustomers();
+              }
+            }}
+          />
+        ) : activeTab === 'dashboard' ? (
         <CRMDashboardView
           onNavigateTab={handleTabChange}
           onNavigate={onNavigate}
@@ -2792,7 +2830,7 @@ export function CRMModule({ onNavigate, initialTab = 'dashboard' }) {
         />
       ) : activeTab === 'notifications' ? (
         <NotificationsView />
-      ) : null}
+      ) : null)}
     </div>
   );
 }

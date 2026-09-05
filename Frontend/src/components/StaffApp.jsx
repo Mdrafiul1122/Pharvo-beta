@@ -27,6 +27,8 @@ const PAGE_META = {
 
 export default function StaffApp() {
   const [activeModule, setActiveModule] = useState("dashboard");
+  const [crmCustomerId, setCrmCustomerId] = useState(null);
+  const [crmNavSource, setCrmNavSource] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const user = getStoredUser();
 
@@ -47,7 +49,26 @@ export default function StaffApp() {
   }, [activeModule, loadUnread]);
 
   function handlePageChange(page) {
+    if (page !== "crm") {
+      setCrmCustomerId(null);
+      setCrmNavSource(null);
+    }
     setActiveModule(page);
+  }
+
+  function handleViewCustomerProfile(customer) {
+    const custId = typeof customer === "object" ? (customer?.id ?? customer) : customer;
+    setCrmCustomerId(custId);
+    setCrmNavSource("customers");
+    setActiveModule("crm");
+  }
+
+  function handleBackFromCrmCustomer() {
+    setCrmCustomerId(null);
+    if (crmNavSource === "customers") {
+      setCrmNavSource(null);
+      setActiveModule("customers");
+    }
   }
 
   function handleLogout() {
@@ -83,8 +104,16 @@ export default function StaffApp() {
       )}
       {activeModule === "pos" && <SalesModule />}
       {activeModule === "medicines-inventory" && <MedicinesInventoryPage />}
-      {activeModule === "customers" && <CustomersPage />}
-      {activeModule === "crm" && <CRMModule onNavigate={handlePageChange} />}
+      {activeModule === "customers" && (
+        <CustomersPage onViewProfile={handleViewCustomerProfile} />
+      )}
+      {activeModule === "crm" && (
+        <CRMModule
+          onNavigate={handlePageChange}
+          initialCustomerId={crmCustomerId}
+          onBackToCustomers={crmNavSource === "customers" ? handleBackFromCrmCustomer : null}
+        />
+      )}
       {activeModule === "orders" && <OrdersPage />}
       {activeModule === "reports" && <ReportsPage />}
       {activeModule === "notifications" && <NotificationsPage onChanged={loadUnread} />}

@@ -65,6 +65,14 @@ export function clearStoredTokens() {
   localStorage.removeItem(USER_KEY);
 }
 
+function formatFieldError(key, msg) {
+  if (!key || ["detail", "error", "message", "non_field_errors"].includes(key)) {
+    return msg;
+  }
+  const label = key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return `${label}: ${msg}`;
+}
+
 function extractMessage(data) {
   if (!data || typeof data !== "object") {
     return "";
@@ -75,15 +83,15 @@ function extractMessage(data) {
   for (const key of Object.keys(data)) {
     const value = data[key];
     if (Array.isArray(value) && value.length) {
-      return String(value[0]);
+      return formatFieldError(key, String(value[0]));
     }
     if (typeof value === "string") {
-      return value;
+      return formatFieldError(key, value);
     }
     if (value && typeof value === "object") {
       const nested = extractMessage(value);
       if (nested) {
-        return nested;
+        return formatFieldError(key, nested);
       }
     }
   }
