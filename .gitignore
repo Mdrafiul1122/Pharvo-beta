@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Environment
+.env
+.env.*
+!.env.example
+*.local
+venv/
+.venv/
+env/
+
+# Generated inspectdb file
+inspectdb_models.py
+
+# Node
+Frontend/node_modules/
+Frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local pre-change database backups (untracked; use pharvo_db.backup as the seed)
+backup_*.backup
+node_modules/
+Frontend/node_modules/
