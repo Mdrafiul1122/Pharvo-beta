@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/ai-assistant", label: "AI Assistant", icon: "🤖" },
   { href: "/products", label: "Products", icon: "💊" },
   { href: "/categories", label: "Categories", icon: "📂" },
   { href: "/suppliers", label: "Suppliers", icon: "🏭" },
